@@ -16,7 +16,9 @@ import numpy as np
 import heapq
 from langchain import PromptTemplate
 from langchain.llms import OpenAI
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Flask(__name__)
 
 #@title load model and data
@@ -93,7 +95,7 @@ def choose_top_objects(imageq, top_object_indices, game_scene):
     anno = annotations[index]
     name = anno['name']
     link = anno['thumbnails']['images'][0]['url']
-    val = False
+    val = True
     image_returned = True
     try:
       val = choose_suitable_image(link, game_scene)
@@ -103,22 +105,23 @@ def choose_top_objects(imageq, top_object_indices, game_scene):
       print("failed")
     if val or image_returned:
       print("appended")
-      new_anno.append((index, anno))
+      new_anno.append(anno)
       fst_valid = index
       if len(new_anno) == 5:
         break
-  print("arrived here")
-  random_image_number = random.randint(0, len(new_anno)-1)
-  print(new_anno)
-  print(random_image_number)
+  # print("arrived here")
+  # random_image_number = random.randint(0, len(new_anno)-1)
+  # print(new_anno)
+  # print(random_image_number)
 
-  print(new_anno[random_image_number])
-  tmp = (new_anno[random_image_number][0])
-  print(tmp)
-  image = get_image(tmp)
-  display(image)
-  print("displayed ")
-  return new_anno[random_image_number][1]
+  # print(new_anno[random_image_number])
+  # tmp = (new_anno[random_image_number][0])
+  # print(tmp)
+  # image = get_image(tmp)
+  # display(image)
+  # print("displayed ")
+  # return new_anno[random_image_number][1]
+  return new_anno
 
 def choose_top_object(imageq, annotations, game_scene):
   for i, index in enumerate(annotations):
@@ -142,6 +145,39 @@ def choose_top_object(imageq, annotations, game_scene):
       max_tokens=300,
   )
   return response.choices[0]['message']['content']
+
+def redo_top_object(annotations, game_scene, feedback):
+  tmp_query = "Choose one of the following images as the one that best fits into the scene, described here: " + str(game_scene) + ".Take into account the following feedback from the last image chosen: "+ str(feedback) + ". If your selected image is the first image, return '1', if it is the second image, return '2', if it is the third image, return '3', and so on."
+  content = []
+  content.append({"type": "text", "text": tmp_query})
+  for cur_annotation in annotations:
+    # cur_anno_val = annotation[1]
+    image_url = cur_annotation['thumbnails']['images'][0]['url']
+    message = {
+        "type": "image_url",
+        "image_url": {
+          "url": image_url
+        }
+    }
+    content.append(message)
+    response = openai.ChatCompletion.create(
+      model="gpt-4-vision-preview",
+      messages=[
+          {
+            "role": "user",
+            "content": content,
+          }
+        ],
+        max_tokens=300,
+    )
+  try:
+    val = int(response.choices[0]['message']['content']) - 1
+  except:
+    print(response.choices[0]['message']['content'])
+    val = 1 
+  # tmp = get_image(annotations[min(val, len(annotations)-1)][0])
+  return annotations[min(val, len(annotations)-1)]['thumbnails']['images'][0]['url']
+
 
 def describe_image(image_url, game_scene):
   tmp_query = "Describe the following image. Explain how it fits into the following scene - " + str(game_scene)
@@ -197,14 +233,15 @@ def choose_suitable_image(image_url, game_scene):
 imagequeries = None
 global image_url 
 query = None
+zeta = None 
 
 @app.route('/', methods = ['GET', 'POST'])
 def home():
+    global query
     if request.method == "POST":
-      openai.api_key = request.form.get("openai_key")
-      global query
+      openai.api_key = os.getenv("OPENAI_API_KEY")
+      # global query
       query = request.form.get("scene_description")
-
       response = openai.ChatCompletion.create(
       model="gpt-4-turbo",
       max_tokens=300,
@@ -223,13 +260,14 @@ def home():
       imageq = imagequeries[0]
       print("Retrieving images for: " + str(imageq))
       top_object_indices = retrieve_objects([imageq], topk=6)[0]
+      global zeta 
       zeta = choose_top_objects(imageq, top_object_indices, query)
-      image_url = zeta['thumbnails']['images'][0]['url']
+      cur_annotation = zeta[0]
+      image_url = cur_annotation['thumbnails']['images'][0]['url']
       print(f"image url is {image_url}\n\n\n\n\n\n")
       return redirect(url_for('results1', url_for_image = image_url, cur_object = imageq))
       # return render_template('temp.html')
     else: 
-      # return render_template('index.html')
       return render_template('index.html')
     # response = openai.ChatCompletion.create(
     # model="gpt-4-turbo",
@@ -261,52 +299,110 @@ def home():
 
 
 
-
 # Results1 endpoint
 @app.route('/results1', methods=['GET', 'POST'])
 def results1():
+    global query
+    global imagequeries
+    global zeta 
     if request.method == 'POST':
-        # imagequeries = requests.get('imagequeries')
+      # imagequeries = requests.get('imagequeries')
         user_decision = request.form.get('decision')
-        if user_decision == 'no':
-            # Handle user's input if they select 'no'
-            # user_thoughts = request.form.get('user_thoughts')
-            return redirect(url_for('results1'))
+        new_object = request.form.get('newobject')
+        if new_object == "yes":
+            feedback = request.form.get('user_feedback')
+            prompt = f"I will give you a game scene and some user feedback. Your task will be to generate an object that can be placed into the game scene and the object must be similar or same to what is described in the user feedback. The Game Scene is : {query}\n The feedback is: {feedback}\nSelect a new object that fits the scene and incorporates the feedback. It must be different from the following objects: {imagequeries}. Only return the text of the object and any adjectives"
+            # return f"{query} and {imagequeries}"
+            response = openai.ChatCompletion.create(
+              model="gpt-4-vision-preview",
+              messages=[
+                  {
+                    "role": "user",
+                    "content": prompt,
+                  }
+                ],
+                max_tokens=300,
+            )
+            
+            cur_response = response.choices[0].message.content
+            # return f"reponse: {cur_response}"
+        
+            top_object_indices = retrieve_objects([cur_response], topk=6)[0]
+            zeta = choose_top_objects(cur_response, top_object_indices, query)
+            image_url = zeta[0]['thumbnails']['images'][0]['url']
+            return redirect(url_for('results1', url_for_image = image_url, cur_object = cur_response))
+        elif user_decision == 'no':
+
+            # if new object specified, just requery 
+            
+            # if no new object specified, 
+            cur_annotation = zeta[0]
+            user_feedback = request.form.get('user_thoughts')
+            # redo_top_object(zeta[1])
+            image_url = cur_annotation['thumbnails']['images'][0]['url']
+            new_image_url = redo_top_object(zeta, query, user_feedback)
+            # return f"User feedback: {user_feedback} and image link: {new_image_url}"
+            return redirect(url_for('results1', url_for_image = new_image_url, cur_object = imagequeries[0]))
         elif user_decision == 'yes':
-            global imagequeries
             imageq = imagequeries[1]
             print("Retrieving images for: " + str(imagequeries[1]))
             top_object_indices = retrieve_objects([imageq], topk=6)[0]
-            global query 
+            # global zeta 
             zeta = choose_top_objects(imageq, top_object_indices, query)
-            image_url = zeta['thumbnails']['images'][0]['url']
+            cur_annotation = zeta[0]
+            image_url = cur_annotation['thumbnails']['images'][0]['url']
             print(image_url)
             return redirect(url_for('results2', url_for_image = image_url, cur_object = imageq))
     else:
-        # Render the template with images and user thoughts
-        # imageq = imagequeries[1]
-        # print("Retrieving images for: " + str(imageq))
-        # top_object_indices = retrieve_objects([imageq], topk=6)[0]
-        # zeta = choose_top_objects(imageq, top_object_indices, query)
-        # image_url = zeta['thumbnails']['images'][0]['url']
-        # print(f"image url is {image_url}\n\n\n\n\n\n")
         return render_template('results1.html')
 
 # Results2, Results3, Results4 endpoints (similar logic to Results1)
 @app.route('/results2', methods=['GET', 'POST'])
 def results2():
+    global query
+    global imagequeries
+    global zeta
     if request.method == 'POST':
         user_decision = request.form.get('decision')
-        if user_decision == 'no':
-            return redirect(url_for('results2'))
+        new_object = request.form.get('newobject')
+        if new_object == "yes":
+            feedback = request.form.get('user_feedback')
+            prompt = f"I will give you a game scene and some user feedback. Your task will be to generate an object that can be placed into the game scene and the object must be similar or same to what is described in the user feedback. The Game Scene is : {query}\n The feedback is: {feedback}\nSelect a new object that fits the scene and incorporates the feedback. It must be different from the following objects: {imagequeries}. Only return the text of the object and any adjectives"
+            # return f"{query} and {imagequeries}"
+            response = openai.ChatCompletion.create(
+              model="gpt-4-vision-preview",
+              messages=[
+                  {
+                    "role": "user",
+                    "content": prompt,
+                  }
+                ],
+                max_tokens=300,
+            )
+            
+            cur_response = response.choices[0].message.content
+            # return f"reponse: {cur_response}"
+        
+            top_object_indices = retrieve_objects([cur_response], topk=6)[0]
+            zeta = choose_top_objects(cur_response, top_object_indices, query)
+            image_url = zeta[0]['thumbnails']['images'][0]['url']
+            return redirect(url_for('results1', url_for_image = image_url, cur_object = cur_response))
+        
+        elif user_decision == 'no':
+            cur_annotation = zeta[0]
+            user_feedback = request.form.get('user_thoughts')
+            # redo_top_object(zeta[1])
+            image_url = cur_annotation['thumbnails']['images'][0]['url']
+            new_image_url = redo_top_object(zeta, query, user_feedback)
+            # return f"User feedback: {user_feedback} and image link: {new_image_url}"
+            return redirect(url_for('results2', url_for_image = new_image_url, cur_object = imagequeries[1]))
         elif user_decision == 'yes':
-            global imagequeries
             imageq = imagequeries[2]
             print("Retrieving images for: " + str(imagequeries[2]))
             top_object_indices = retrieve_objects([imageq], topk=6)[0]
-            global query 
             zeta = choose_top_objects(imageq, top_object_indices, query)
-            image_url = zeta['thumbnails']['images'][0]['url']
+            cur_annotation = zeta[0]
+            image_url = cur_annotation['thumbnails']['images'][0]['url']
             print(image_url)
             return redirect(url_for('results3', url_for_image = image_url, cur_object = imageq))
     else:
@@ -316,20 +412,47 @@ def results2():
 
 @app.route('/results3', methods=['GET', 'POST'])
 def results3():
+    global query
+    global imagequeries
+    global zeta
     if request.method == 'POST':
         user_decision = request.form.get('decision')
-        if user_decision == 'no':
-            # Handle user's input if they select 'no'
-            # user_thoughts = request.form.get('user_thoughts')
-            return redirect(url_for('results3'))
+        new_object = request.form.get('newobject')
+        if new_object == "yes":
+            feedback = request.form.get('user_feedback')
+            prompt = f"I will give you a game scene and some user feedback. Your task will be to generate an object that can be placed into the game scene and the object must be similar or same to what is described in the user feedback. The Game Scene is : {query}\n The feedback is: {feedback}\nSelect a new object that fits the scene and incorporates the feedback. It must be different from the following objects: {imagequeries}. Only return the text of the object and any adjectives"
+            # return f"{query} and {imagequeries}"
+            response = openai.ChatCompletion.create(
+              model="gpt-4-vision-preview",
+              messages=[
+                  {
+                    "role": "user",
+                    "content": prompt,
+                  }
+                ],
+                max_tokens=300,
+            )
+            
+            cur_response = response.choices[0].message.content
+            # return f"reponse: {cur_response}"
+        
+            top_object_indices = retrieve_objects([cur_response], topk=6)[0]
+            zeta = choose_top_objects(cur_response, top_object_indices, query)
+            image_url = zeta[0]['thumbnails']['images'][0]['url']
+            return redirect(url_for('results1', url_for_image = image_url, cur_object = cur_response))
+        elif user_decision == 'no':
+          user_feedback = request.form.get('user_thoughts')
+          # redo_top_object(zeta[1])
+          new_image_url = redo_top_object(zeta, query, user_feedback)
+          # return f"User feedback: {user_feedback} and image link: {new_image_url}"
+          return redirect(url_for('results3', url_for_image = new_image_url, cur_object = imagequeries[2]))
         elif user_decision == 'yes':
-            global imagequeries
             imageq = imagequeries[3]
             print("Retrieving images for: " + str(imagequeries[3]))
             top_object_indices = retrieve_objects([imageq], topk=6)[0]
-            global query 
             zeta = choose_top_objects(imageq, top_object_indices, query)
-            image_url = zeta['thumbnails']['images'][0]['url']
+            cur_annotation = zeta[0]
+            image_url = cur_annotation['thumbnails']['images'][0]['url']
             print(image_url)
             return redirect(url_for('results4', url_for_image = image_url, cur_object = imageq))
     else:
@@ -340,10 +463,35 @@ def results3():
 def results4():
     if request.method == 'POST':
         user_decision = request.form.get('decision')
-        if user_decision == 'no':
-            # Handle user's input if they select 'no'
-            # user_thoughts = request.form.get('user_thoughts')
-            return redirect(url_for('results4'))
+        new_object = request.form.get('newobject')
+        if new_object == "yes":
+            feedback = request.form.get('user_feedback')
+            prompt = f"I will give you a game scene and some user feedback. Your task will be to generate an object that can be placed into the game scene and the object must be similar or same to what is described in the user feedback. The Game Scene is : {query}\n The feedback is: {feedback}\nSelect a new object that fits the scene and incorporates the feedback. It must be different from the following objects: {imagequeries}. Only return the text of the object and any adjectives"
+            # return f"{query} and {imagequeries}"
+            response = openai.ChatCompletion.create(
+              model="gpt-4-vision-preview",
+              messages=[
+                  {
+                    "role": "user",
+                    "content": prompt,
+                  }
+                ],
+                max_tokens=300,
+            )
+            
+            cur_response = response.choices[0].message.content
+            # return f"reponse: {cur_response}"
+        
+            top_object_indices = retrieve_objects([cur_response], topk=6)[0]
+            zeta = choose_top_objects(cur_response, top_object_indices, query)
+            image_url = zeta[0]['thumbnails']['images'][0]['url']
+            return redirect(url_for('results1', url_for_image = image_url, cur_object = cur_response))
+        elif user_decision == 'no':
+            user_feedback = request.form.get('user_thoughts')
+            # redo_top_object(zeta[1])
+            new_image_url = redo_top_object(zeta, query, user_feedback)
+            # return f"User feedback: {user_feedback} and image link: {new_image_url}"
+            return redirect(url_for('results4', url_for_image = new_image_url, cur_object = imagequeries[3]))
         elif user_decision == 'yes':
             return "Thank you so much for trying out NPC Selector!"
     else:

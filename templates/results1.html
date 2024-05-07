@@ -105,15 +105,20 @@
 <body>
     <h1>Results For - {{request.args.get('cur_object')}}</h1>
     <img src="{{ request.args.get('url_for_image') }}" alt="Image">
-    <p>User Thoughts: {{ user_thoughts }}</p>
+    <!-- <p>User Thoughts: {{ user_thoughts }}</p> -->
     <form method="post">
+        <label for="newobject">Do you want a different type of object?</label><br>
+        <select id="newobject" name="newobject">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
         <label for="decision">Do you like these images?</label><br>
         <select id="decision" name="decision">
             <option value="yes">Yes</option>
             <option value="no">No</option>
         </select>
         <br>
-        <label for="user_thoughts">Enter your thoughts:</label><br>
+        <label for="user_thoughts">Enter your thoughts / New Object if you selected:</label><br>
         <input type="text" id="user_thoughts" name="user_thoughts"><br>
         <button type="submit">Submit</button>
     </form>
