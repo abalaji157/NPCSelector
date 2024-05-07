@@ -1,0 +1,92 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scene Description</title>
+</head>
+<body>
+    <h1>Enter Scene Description</h1>
+    <form action="/" method="post">
+        <label for="openai_key">OpenAI API Key:</label>
+        <input type="text" id="openai_key" name="openai_key"><br><br>
+        <label for="scene_description">Scene Description:</label><br>
+        <textarea id="scene_description" name="scene_description" rows="4" cols="50"></textarea><br><br>
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html> -->
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scene Description</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0; /* Light gray background */
+            color: #333; /* Dark gray text color */
+            text-align: center; /* Center align text */
+            padding-top: 50px; /* Add some top padding */
+        }
+
+        h1 {
+            color: #009688; /* Teal header color */
+        }
+
+        form {
+            display: inline-block; /* Display form as inline block */
+            text-align: left; /* Left align form elements */
+            background-color: #fff; /* White background for form */
+            padding: 20px; /* Add some padding */
+            border-radius: 10px; /* Rounded corners for form */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add shadow effect */
+        }
+
+        label {
+            font-weight: bold; /* Bold label text */
+            color: #009688; /* Teal label color */
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%; /* Full width input fields */
+            padding: 10px; /* Add some padding */
+            margin: 5px 0; /* Add some margin */
+            border: 1px solid #ccc; /* Add border */
+            border-radius: 5px; /* Rounded corners for input fields */
+            box-sizing: border-box; /* Include padding and border in width calculation */
+        }
+
+        input[type="submit"] {
+            background-color: #009688; /* Teal submit button background color */
+            color: #fff; /* White text color */
+            padding: 10px 20px; /* Add padding */
+            border: none; /* Remove border */
+            border-radius: 5px; /* Rounded corners */
+            cursor: pointer; /* Add cursor pointer on hover */
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+
+        input[type="submit"]:hover {
+            background-color: #00796b; /* Darker teal on hover */
+        }
+    </style>
+</head>
+<body>
+    <h1>Enter Scene Description</h1>
+    <form action="/" method="post">
+        <label for="openai_key">OpenAI API Key:</label><br>
+        <input type="text" id="openai_key" name="openai_key"><br><br>
+        <label for="scene_description">Scene Description:</label><br>
+        <textarea id="scene_description" name="scene_description" rows="4" cols="50"></textarea><br><br>
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>

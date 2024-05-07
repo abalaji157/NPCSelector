@@ -1,0 +1,120 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results 1</title>
+</head>
+<body>
+    <h1>Results 1</h1>
+    <body>
+        <b1> we are here {{request.args.get('url_for_image')}} ! </b1>
+        <b1> {{request.args.get('url_for_image')}} </b1>
+        <img src="{{ request.args.get('url_for_image') }}" alt="Image">
+    </body>
+    <p>User Thoughts: {{ user_thoughts }}</p>
+    <form method="post">
+        <label for="decision">Do you like these images?</label>
+        <select id="decision" name="decision">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+        <br>
+        <label for="user_thoughts">Enter your thoughts:</label>
+        <input type="text" id="user_thoughts" name="user_thoughts">
+        <br>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results 1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9; /* Light gray background */
+            color: #333; /* Dark gray text color */
+            text-align: center; /* Center align text */
+            padding-top: 50px; /* Add some top padding */
+        }
+
+        h1 {
+            color: #009688; /* Teal header color */
+            margin-bottom: 20px; /* Add some bottom margin */
+        }
+
+        img {
+            width: 75%;
+            border-radius: 10px; /* Rounded corners for images */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add shadow effect */
+            margin-top: 20px; /* Add some top margin */
+        }
+
+        p {
+            margin-top: 20px; /* Add some top margin */
+            color: #555; /* Dark gray text color */
+        }
+
+        form {
+            display: inline-block; /* Display form as inline block */
+            text-align: left; /* Left align form elements */
+            background-color: #fff; /* White background for form */
+            padding: 20px; /* Add some padding */
+            border-radius: 10px; /* Rounded corners for form */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add shadow effect */
+            margin-top: 20px; /* Add some top margin */
+        }
+
+        label {
+            font-weight: bold; /* Bold label text */
+            color: #009688; /* Teal label color */
+        }
+
+        select,
+        input[type="text"] {
+            width: calc(100% - 22px); /* Full width input fields */
+            padding: 10px; /* Add some padding */
+            margin: 5px 0; /* Add some margin */
+            border: 1px solid #ccc; /* Add border */
+            border-radius: 5px; /* Rounded corners for input fields */
+            box-sizing: border-box; /* Include padding and border in width calculation */
+        }
+
+        button {
+            background-color: #009688; /* Teal button background color */
+            color: #fff; /* White text color */
+            padding: 10px 20px; /* Add padding */
+            border: none; /* Remove border */
+            border-radius: 5px; /* Rounded corners */
+            cursor: pointer; /* Add cursor pointer on hover */
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+
+        button:hover {
+            background-color: #00796b; /* Darker teal on hover */
+        }
+    </style>
+</head>
+<body>
+    <h1>Results For - {{request.args.get('cur_object')}}</h1>
+    <img src="{{ request.args.get('url_for_image') }}" alt="Image">
+    <p>User Thoughts: {{ user_thoughts }}</p>
+    <form method="post">
+        <label for="decision">Do you like these images?</label><br>
+        <select id="decision" name="decision">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+        <br>
+        <label for="user_thoughts">Enter your thoughts:</label><br>
+        <input type="text" id="user_thoughts" name="user_thoughts"><br>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
