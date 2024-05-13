@@ -109,18 +109,6 @@ def choose_top_objects(imageq, top_object_indices, game_scene):
       fst_valid = index
       if len(new_anno) == 5:
         break
-  # print("arrived here")
-  # random_image_number = random.randint(0, len(new_anno)-1)
-  # print(new_anno)
-  # print(random_image_number)
-
-  # print(new_anno[random_image_number])
-  # tmp = (new_anno[random_image_number][0])
-  # print(tmp)
-  # image = get_image(tmp)
-  # display(image)
-  # print("displayed ")
-  # return new_anno[random_image_number][1]
   return new_anno
 
 def choose_top_object(imageq, annotations, game_scene):
@@ -266,37 +254,8 @@ def home():
       image_url = cur_annotation['thumbnails']['images'][0]['url']
       print(f"image url is {image_url}\n\n\n\n\n\n")
       return redirect(url_for('results1', url_for_image = image_url, cur_object = imageq))
-      # return render_template('temp.html')
     else: 
       return render_template('index.html')
-    # response = openai.ChatCompletion.create(
-    # model="gpt-4-turbo",
-    # max_tokens=300,
-    # messages=[
-    #     {"role": "system", "content": "You will be provided with a scene from a game. You will CHOOSE ONLY FOUR most applicable digital assets to the scene entered by the user from a universe of 3d models. Choose 4 applicable assets from the user response, and return their names as a comma separated list."},
-    #     {"role": "user", "content": query}
-    # ]
-    # )
-
-    # imagequeries = response.choices[0].message.content.split(",")
-    # print(imagequeries)
-
-    # firstimagedesc = ""
-    # firstfeedback = ""
-
-    # for imageq in imagequeries:
-    #     print("Retrieving images for: " + str(imageq))
-    #     top_object_indices = retrieve_objects([imageq], topk=6)[0]
-    #     zeta = choose_top_objects(imageq, top_object_indices, query)
-    #     satisfied = input("Do you like this object? (yes/no)")
-    #     if satisfied == "no":
-    #         feedback = input("Give specific reasons that you do not like this object. For example say this object is not friendly enough or is too cartoony.")
-    #         while firstfeedback == "":
-    #             firstfeedback = feedback
-
-
-
-
 
 
 # Results1 endpoint
@@ -306,13 +265,11 @@ def results1():
     global imagequeries
     global zeta 
     if request.method == 'POST':
-      # imagequeries = requests.get('imagequeries')
         user_decision = request.form.get('decision')
         new_object = request.form.get('newobject')
         if new_object == "yes":
             feedback = request.form.get('user_feedback')
             prompt = f"I will give you a game scene and some user feedback. Your task will be to generate an object that can be placed into the game scene and the object must be similar or same to what is described in the user feedback. The Game Scene is : {query}\n The feedback is: {feedback}\nSelect a new object that fits the scene and incorporates the feedback. It must be different from the following objects: {imagequeries}. Only return the text of the object and any adjectives"
-            # return f"{query} and {imagequeries}"
             response = openai.ChatCompletion.create(
               model="gpt-4-vision-preview",
               messages=[
@@ -338,16 +295,13 @@ def results1():
             # if no new object specified, 
             cur_annotation = zeta[0]
             user_feedback = request.form.get('user_thoughts')
-            # redo_top_object(zeta[1])
             image_url = cur_annotation['thumbnails']['images'][0]['url']
             new_image_url = redo_top_object(zeta, query, user_feedback)
-            # return f"User feedback: {user_feedback} and image link: {new_image_url}"
             return redirect(url_for('results1', url_for_image = new_image_url, cur_object = imagequeries[0]))
         elif user_decision == 'yes':
             imageq = imagequeries[1]
             print("Retrieving images for: " + str(imagequeries[1]))
             top_object_indices = retrieve_objects([imageq], topk=6)[0]
-            # global zeta 
             zeta = choose_top_objects(imageq, top_object_indices, query)
             cur_annotation = zeta[0]
             image_url = cur_annotation['thumbnails']['images'][0]['url']
@@ -391,10 +345,8 @@ def results2():
         elif user_decision == 'no':
             cur_annotation = zeta[0]
             user_feedback = request.form.get('user_thoughts')
-            # redo_top_object(zeta[1])
             image_url = cur_annotation['thumbnails']['images'][0]['url']
             new_image_url = redo_top_object(zeta, query, user_feedback)
-            # return f"User feedback: {user_feedback} and image link: {new_image_url}"
             return redirect(url_for('results2', url_for_image = new_image_url, cur_object = imagequeries[1]))
         elif user_decision == 'yes':
             imageq = imagequeries[2]
@@ -442,7 +394,6 @@ def results3():
             return redirect(url_for('results1', url_for_image = image_url, cur_object = cur_response))
         elif user_decision == 'no':
           user_feedback = request.form.get('user_thoughts')
-          # redo_top_object(zeta[1])
           new_image_url = redo_top_object(zeta, query, user_feedback)
           # return f"User feedback: {user_feedback} and image link: {new_image_url}"
           return redirect(url_for('results3', url_for_image = new_image_url, cur_object = imagequeries[2]))
